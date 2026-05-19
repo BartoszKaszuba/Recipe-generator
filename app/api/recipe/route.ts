@@ -12,12 +12,14 @@ export async function POST(request: NextRequest) {
     // 1. Parse request body
     const body: RecipeRequest = await request.json();
 
-    // 2. Validate input
-    const validationError = validateRecipeRequest(body);
-    if (validationError) {
-      return NextResponse.json(validationError, {
-        status: validationError.status,
-      });
+    // 2. Validate input (only if not using messages)
+    if (!body.messages) {
+      const validationError = validateRecipeRequest(body);
+      if (validationError) {
+        return NextResponse.json(validationError, {
+          status: validationError.status,
+        });
+      }
     }
 
     // 3. Call OpenAI

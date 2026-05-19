@@ -19,7 +19,12 @@ export function parseRecipeResponse(responseText: string): Recipe | ApiError {
     };
   }
 
-  // Validate all required fields exist
+  // If it's a follow-up question or thanks-only response, return as-is
+  if (recipe.followUp || (!recipe.recipeName && recipe.thanks)) {
+    return recipe;
+  }
+
+  // For full recipe responses, validate required fields
   const validationError = validateRecipeFields(recipe);
   if (validationError) {
     return validationError;

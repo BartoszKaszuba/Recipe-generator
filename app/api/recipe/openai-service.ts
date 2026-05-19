@@ -1,23 +1,24 @@
 import OpenAI from 'openai';
-import { RecipeRequest } from './types';
+import { RecipeRequest, Message } from './types';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const SYSTEM_PROMPT = `You are DishDash, an AI recipe assistant. Respond ONLY with valid JSON.
+- When user provides ingredients: return recipe JSON with recipeName, summary, ingredients (array), instructions (array), tips
+- When clarification needed: return {"followUp": "your question"}
+- When user provides preferences: include "thanks" field with brief acknowledgement
+Never include text outside JSON.`;
+
 export async function callOpenAIForRecipe(body: RecipeRequest): Promise<string> {
-  const prompt = buildPrompt(body);
+  const messages = buildMessages(body);
 
   try {
     const message = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 1024,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+      messages: messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
     });
 
     const responseText = message.choices[0]?.message?.content || '';
@@ -30,29 +31,26 @@ export async function callOpenAIForRecipe(body: RecipeRequest): Promise<string> 
   }
 }
 
-function buildPrompt(body: RecipeRequest): string {
-  let prompt = `Generate a recipe based on these ingredients: ${body.ingredients}.`;
-
-  if (body.diet) {
-    prompt += ` Diet restriction: ${body.diet}.`;
+function buildMessages(body: RecipeRequest): Message[] {
+  // Multi-turn: use messages array (last 8 for cost control)
+  if (body.messages && body.messages.length > 0) {
+    const hasSystem = body.messages.some(m => m.role === 'system');
+    const messages: Message[] = [];
+    if (!hasSystem) {
+      messages.push({ role: 'system', content: SYSTEM_PROMPT });
+    }
+    messages.push(...body.messages.slice(-8));
+    return messages;
   }
-  if (body.cuisine) {
-    prompt += ` Cuisine preference: ${body.cuisine}.`;
-  }
-  if (body.mealType) {
-    prompt += ` Meal type: ${body.mealType}.`;
-  }
 
-  prompt += `
+  // Single-shot: build from ingredients + options
+  let prompt = `Generate a recipe from: ${body.ingredients || 'any available ingredients'}`;
+  if (body.diet) prompt += `. Diet: ${body.diet}`;
+  if (body.cuisine) prompt += `. Cuisine: ${body.cuisine}`;
+  if (body.mealType) prompt += `. Type: ${body.mealType}`;
 
-Please respond with ONLY a valid JSON object in this exact format, with no additional text:
-{
-  "recipeName": "Name of the recipe",
-  "summary": "Brief description of the dish",
-  "ingredients": ["ingredient 1", "ingredient 2", "ingredient 3"],
-  "instructions": ["Step 1", "Step 2", "Step 3"],
-  "tips": "Any cooking tips or variations"
-}`;
-
-  return prompt;
+  return [
+    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'user', content: prompt }
+  ];
 }
