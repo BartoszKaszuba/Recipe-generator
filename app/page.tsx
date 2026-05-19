@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Header from "./main/Header";
-import Hero from "./main/Hero";
-import ResponseJson from "./main/ResponseJson";
-import ErrorAlert from "./main/ErrorAlert";
-import RecipeForm from "./main/RecipeForm";
+import Header from "./page components/Header";
+import Hero from "./page components/Hero";
+import ResponseJson from "./page components/ResponseJson";
+import ErrorAlert from "./page components/ErrorAlert";
+import RecipeForm from "./page components/RecipeForm";
 
 interface Recipe {
   recipeName: string;

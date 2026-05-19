@@ -27,7 +27,7 @@ export default function RecipeForm({
 }: Props) {
   return (
     <section className="bg-white rounded-lg border border-gray-300 shadow-sm">
-      <div className="p-4 wborder-b border-gray-200">
+      <div className="p-4 border-b border-gray-200">
         <label htmlFor="ingredients" className="block text-sm font-semibold text-gray-700 mb-2">
           Ingredients
         </label>
